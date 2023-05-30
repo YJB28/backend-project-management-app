@@ -1,110 +1,98 @@
-from flask import Flask, request, jsonify
-from flask_mysqldb import MySQL
-from flask_cors import CORS
+from flask import Flask, jsonify, request
+import mysql.connector
+from flask_cors import CORS,cross_origin
+import bcrypt
+from flask_bcrypt import Bcrypt
+from connection import *
+from queries import *
+
 
 app = Flask(__name__)
-app.config["DEBUG"] = True
+cors = CORS(app,origins= "*")
 
-# MySQL configuration
-app.config["MYSQL_HOST"] = "your_mysql_host"
-app.config["MYSQL_USER"] = "your_mysql_username"
-app.config["MYSQL_PASSWORD"] = "your_mysql_password"
-app.config["MYSQL_DB"] = "your_mysql_database"
 
-# Initialize MySQL
-mysql = MySQL(app)
+###########################################################
+#                           LOGIN                         #
+###########################################################
+@app.route('/login', methods=['POST'])
+def pm_login():
+    data = request.get_json()
+    Email_ID = data['email_id']
+    Password = data['password']
+    cursor = mysql.connection.cursor()
+    query = "SELECT * FROM Users WHERE Email_ID=%s"
+    values = (Email_ID,)
+    cursor.execute(query, values)
+    users = cursor.fetchone()
 
-# Enable CORS
-CORS(app)
-
-# Create some test data for our catalog in the form of a list of dictionaries.
-books = [
-    {
-        "id": 1,
-        "isbn": "9781593279509",
-        "title": "Eloquent JavaScript, Third Edition",
-        "subtitle": "A Modern Introduction to Programming",
-        "author": "Marijn Haverbeke",
-        "published": "2018-12-04T00:00:00.000Z",
-        "publisher": "No Starch Press",
-        "pages": 472,
-        "description": "JavaScript lies at the heart of almost every modern web application, from social apps like Twitter to browser-based game frameworks like Phaser and Babylon. Though simple for beginners to pick up and play with, JavaScript is a flexible, complex language that you can use to build full-scale applications.",
-        "website": "http://eloquentjavascript.net/"
-    },
-    {
-        "id": 2,
-        "isbn": "9781491943533",
-        "title": "Practical Modern JavaScript",
-        "subtitle": "Dive into ES6 and the Future of JavaScript",
-        "author": "Nicolás Bevacqua",
-        "published": "2017-07-16T00:00:00.000Z",
-        "publisher": "O'Reilly Media",
-        "pages": 334,
-        "description": "To get the most out of modern JavaScript, you need learn the latest features of its parent specification, ECMAScript 6 (ES6). This book provides a highly practical look at ES6, without getting lost in the specification or its implementation details.",
-        "website": "https://github.com/mjavascript/practical-modern-javascript"
-    }
-]
-
-@app.route('/', methods=['GET'])
-def home():
-    return '''<h1>POC-Backend</h1>
-                <p>A Flask API implementation for book information.</p>'''
-
-@app.route('/api/v1/books/all', methods=['GET'])
-def api_all():
-    cur = mysql.connection.cursor()
-    cur.execute("SELECT * FROM books")
-    books = cur.fetchall()
-    cur.close()
-    return jsonify(books)
-
-@app.route('/api/v1/books', methods=['GET'])
-def api_id():
-    if 'id' in request.args:
-        id = int(request.args['id'])
+    if not users:
+        return jsonify({"role": "Invalid Email"})
     else:
-        return "Error: No id field provided. Please specify an id."
+        flag=True
+        query = "SELECT * FROM Users WHERE Password=%s"
+        values = (Password,)
+        cursor.execute(query,values)
+        users = cursor.fetchone()
+        if not users:
+            return jsonify ({404, 'Resource not found'})
+        else:
+            flag2=True
+        if flag==flag2==True:
+            return jsonify({"Return": "login sucessfull"})
+    
+###########################################################
+#                           SIGNUP                        #
+###########################################################
+cors = CORS(app,origins= "*")
+bcrypt=Bcrypt(app)
+@app.route('/add_user', methods=['POST'])
+def add_user():
+        data = request.get_json()
+        name = data['name']
+        email_id = data['email_id']
+        contact = data['contact']
+        roles = data['roles']
 
-    results = []
-    for book in books:
-        if book['id'] == id:
-            results.append(book)
 
-    return jsonify(results)
+        import smtplib
+        import random
+
+        def send_otp_email(receiver_email, otp):
+            sender_email = "pratik@infobellit.com"  # Replace with your email address
+            password = "mzygirleuqcwzwtk"  # Replace with your email password
+
+            message = f"Subject: login credentials for Project Management Tool\n\n Your Username is your email.\nYour password is: {otp}"
+
+            with smtplib.SMTP("smtp.gmail.com", 587) as server:
+                server.starttls()
+                server.login(sender_email, password)
+                server.sendmail(sender_email, receiver_email, message)
+
+        def generate_otp(length=6):
+            digits = "0123456789abcdefghijklmnopqrstuvwxyz"
+            otp = ""
+            for _ in range(length):
+                otp += random.choice(digits)
+
+            return otp
+
+        # Example usage
+        email = email_id  # Replace with the recipient's email address
+
+        otp = generate_otp()
+        send_otp_email(email, otp)
+        print("OTP sent successfully!")
 
 
-@app.route('/api/v1/books', methods=['GET'])
-def api_id():
-    if 'id' in request.args:
-        id = int(request.args['id'])
-    else:
-        return "Error: No id field provided. Please specify an id."
+        # Hash the password
+        hashed_password = bcrypt.generate_password_hash(otp).decode('utf-8')
 
-    cur = mysql.connection.cursor()
-    cur.execute("SELECT * FROM books WHERE id = %s", (id,))
-    results = cur.fetchall()
-    cur.close()
+        cursor = mysql.connection.cursor()
+        return signupq(name, email_id,hashed_password, contact,roles)
+     
+                
 
-    return jsonify(results)
 
-@app.route("/api/v1/books", methods=['POST'])
-def api_insert():
-    book = request.get_json()
-    cur = mysql.connection.cursor()
-    cur.execute("INSERT INTO books (id, isbn, title, subtitle, author, published, publisher, pages, description, website) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", 
-                (book['id'], book['isbn'], book['title'], book['subtitle'], book['author'], book['published'], 
-                 book['publisher'], book['pages'], book['description'], book['website']))
-    mysql.connection.commit()
-    cur.close()
-    return "Success: Book information has been added."
 
-@app.route("/api/v1/books/<id>", methods=['DELETE'])
-def api_delete(id):
-    cur = mysql.connection.cursor()
-    cur.execute("DELETE FROM books WHERE id = %s", (id,))
-    mysql.connection.commit()
-    cur.close()
-    return "Success: Book information has been deleted."
-
-if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000, debug=True)
+if __name__ == "__main__":
+    app.run(debug=True)
