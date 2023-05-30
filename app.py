@@ -1,7 +1,17 @@
 from flask import Flask, request, jsonify
+from flask_mysqldb import MySQL
 
 app = Flask(__name__)
 app.config["DEBUG"] = True
+
+# MySQL configuration
+app.config["MYSQL_HOST"] = "your_mysql_host"
+app.config["MYSQL_USER"] = "your_mysql_username"
+app.config["MYSQL_PASSWORD"] = "your_mysql_password"
+app.config["MYSQL_DB"] = "your_mysql_database"
+
+# Initialize MySQL
+mysql = MySQL(app)
 
 # Create some test data for our catalog in the form of a list of dictionaries.
 books = [
@@ -33,11 +43,15 @@ books = [
 
 @app.route('/', methods=['GET'])
 def home():
-    return '''<h1>VLib - Online Library</h1>
-                <p>A flask API implementation for book information.</p>'''
+    return '''<h1>YJB POC</h1>
+                <p>A Flask API implementation for book information.</p>'''
 
 @app.route('/api/v1/books/all', methods=['GET'])
 def api_all():
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT * FROM books")
+    books = cur.fetchall()
+    cur.close()
     return jsonify(books)
 
 @app.route('/api/v1/books', methods=['GET'])
@@ -47,24 +61,29 @@ def api_id():
     else:
         return "Error: No id field provided. Please specify an id."
 
-    results = []
-    for book in books:
-        if book['id'] == id:
-            results.append(book)
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT * FROM books WHERE id = %s", (id,))
+    results = cur.fetchall()
+    cur.close()
 
     return jsonify(results)
 
-@app.route("/api/v1/books",  methods=['POST'])
+@app.route("/api/v1/books", methods=['POST'])
 def api_insert():
     book = request.get_json()
-    books.append(book)
+    cur = mysql.connection.cursor()
+    cur.execute("INSERT INTO books (id, isbn, title, subtitle, author, published, publisher, pages, description, website) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                (book['id'], book['isbn'], book['title'], book['subtitle'], book['author'], book['published'], book['publisher'], book['pages'], book['description'], book['website']))
+    mysql.connection.commit()
+    cur.close()
     return "Success: Book information has been added."
 
 @app.route("/api/v1/books/<id>", methods=['DELETE'])
 def api_delete(id):
-    for book in books:
-        if book['id'] == int(id):
-            books.remove(book)
+    cur = mysql.connection.cursor()
+    cur.execute("DELETE FROM books WHERE id = %s", (id,))
+    mysql.connection.commit()
+    cur.close()
     return "Success: Book information has been deleted."
 
 if __name__ == '__main__':
