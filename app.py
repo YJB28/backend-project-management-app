@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_mysqldb import MySQL
+from flask_cors import CORS
 
 app = Flask(__name__)
 app.config["DEBUG"] = True
@@ -12,6 +13,9 @@ app.config["MYSQL_DB"] = "your_mysql_database"
 
 # Initialize MySQL
 mysql = MySQL(app)
+
+# Enable CORS
+CORS(app)
 
 # Create some test data for our catalog in the form of a list of dictionaries.
 books = [
@@ -43,7 +47,7 @@ books = [
 
 @app.route('/', methods=['GET'])
 def home():
-    return '''<h1>YJB POC</h1>
+    return '''<h1>POC-Backend</h1>
                 <p>A Flask API implementation for book information.</p>'''
 
 @app.route('/api/v1/books/all', methods=['GET'])
@@ -53,6 +57,21 @@ def api_all():
     books = cur.fetchall()
     cur.close()
     return jsonify(books)
+
+@app.route('/api/v1/books', methods=['GET'])
+def api_id():
+    if 'id' in request.args:
+        id = int(request.args['id'])
+    else:
+        return "Error: No id field provided. Please specify an id."
+
+    results = []
+    for book in books:
+        if book['id'] == id:
+            results.append(book)
+
+    return jsonify(results)
+
 
 @app.route('/api/v1/books', methods=['GET'])
 def api_id():
@@ -72,8 +91,9 @@ def api_id():
 def api_insert():
     book = request.get_json()
     cur = mysql.connection.cursor()
-    cur.execute("INSERT INTO books (id, isbn, title, subtitle, author, published, publisher, pages, description, website) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                (book['id'], book['isbn'], book['title'], book['subtitle'], book['author'], book['published'], book['publisher'], book['pages'], book['description'], book['website']))
+    cur.execute("INSERT INTO books (id, isbn, title, subtitle, author, published, publisher, pages, description, website) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", 
+                (book['id'], book['isbn'], book['title'], book['subtitle'], book['author'], book['published'], 
+                 book['publisher'], book['pages'], book['description'], book['website']))
     mysql.connection.commit()
     cur.close()
     return "Success: Book information has been added."
