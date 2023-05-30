@@ -20,6 +20,10 @@ COPY . .
 # Install the project dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Set ownership and switch to a non-root user
+RUN chown -R 1001:0 /app
+USER 1001
+
 # Expose the port on which the application will run (optional)
 EXPOSE 5000
 
@@ -28,4 +32,4 @@ ENV FLASK_APP=app.py
 ENV FLASK_RUN_HOST=0.0.0.0
 
 # Start the Flask application using Gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
+ENTRYPOINT ["gunicorn", "--bind", "0.0.0.0:5000", "app:app", "--log-level", "debug"]
