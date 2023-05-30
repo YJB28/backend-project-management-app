@@ -10,6 +10,9 @@ from queries import *
 app = Flask(__name__)
 cors = CORS(app,origins= "*")
 
+@app.route('/')
+def home():
+    return '<h1>Welcome to the POC YJB</h1>'
 
 ###########################################################
 #                           LOGIN                         #
