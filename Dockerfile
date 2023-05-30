@@ -4,6 +4,9 @@ FROM python:3.9
 # Set the working directory in the container
 WORKDIR /app
 
+# Upgrade pip
+RUN python -m pip install --no-cache-dir --upgrade pip
+
 # Copy the requirements file to the working directory
 COPY requirements.txt .
 
