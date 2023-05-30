@@ -7,14 +7,18 @@ WORKDIR /app
 # Upgrade pip
 RUN python -m pip install --no-cache-dir --upgrade pip
 
-# Copy the requirements file to the working directory
-COPY requirements.txt .
+# Install virtualenv
+RUN python -m pip install --no-cache-dir virtualenv
 
-# Install the project dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Create and activate a virtual environment
+RUN python -m venv venv
+RUN /bin/bash -c "source venv/bin/activate"
 
 # Copy the application code to the container
 COPY . .
+
+# Install the project dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Expose the port on which the application will run
 EXPOSE 5000
