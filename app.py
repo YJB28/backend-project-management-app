@@ -12,7 +12,7 @@ cors = CORS(app,origins= "*")
 
 @app.route('/')
 def home():
-    return '<h1>Welcome Team :To the POC YJB...1</h1>'
+    return '<h1>Welcome Team :To the POC YJB...12</h1>'
 
 # Route for user signup
 @app.route('/signup', methods=['POST'])
@@ -69,7 +69,7 @@ def get_users():
 # Login
 
 @app.route('/login', methods=['POST'])
-def login():
+def pm_login():
     data = request.get_json()
     email = data['email']
     password = data['password']
@@ -78,29 +78,31 @@ def login():
     connection = connect_db()
     cursor = connection.cursor()
 
-    # Retrieve user from the "User" table based on email
-    query = "SELECT * FROM User WHERE email = %s"
+    # Check if the email exists in the User table
+    query = "SELECT * FROM User WHERE email=%s"
     values = (email,)
     cursor.execute(query, values)
     user = cursor.fetchone()
 
-    # Consume the result set
-    cursor.fetchall()
+    if not user:
+        # Email not found
+        cursor.close()
+        connection.close()
+        return jsonify({"error": "Invalid Email"})
+
+    # Verify the password
+    hashed_password = user[2]
+    if not bcrypt.check_password_hash(hashed_password, password):
+        # Incorrect password
+        cursor.close()
+        connection.close()
+        return jsonify({"error": "Invalid Password"})
 
     # Close the MySQL connection
     cursor.close()
     connection.close()
 
-    if not user:
-        return jsonify({"error": "Invalid Email"})
-
-    stored_password = user[2]
-
-    if password == stored_password:
-        return jsonify({"message": "Login successful"})
-    else:
-        return jsonify({"error": "Invalid Password"})
-
+    return jsonify({"message": "Login successful"})
 
 ###########################################################
 #                           LOGIN                         #
