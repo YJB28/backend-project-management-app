@@ -38,6 +38,35 @@ def signup():
 
     return jsonify({"message": "User signup successful"})
 
+# Route for getting all users
+@app.route('/users', methods=['GET'])
+def get_users():
+    # Create a MySQL connection
+    connection = connect_db()
+    cursor = connection.cursor()
+
+    # Retrieve all users from the "User" table
+    query = "SELECT * FROM User"
+    cursor.execute(query)
+    users = cursor.fetchall()
+
+    # Close the MySQL connection
+    cursor.close()
+    connection.close()
+
+    # Format the users data
+    user_list = []
+    for user in users:
+        user_data = {
+            'id': user[0],
+            'name': user[1],
+            'email': user[2]
+        }
+        user_list.append(user_data)
+
+    return jsonify({"users": user_list})
+
+
 ###########################################################
 #                           LOGIN                         #
 ###########################################################
