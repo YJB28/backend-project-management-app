@@ -14,7 +14,6 @@ cors = CORS(app,origins= "*")
 def home():
     return '<h1>Welcome to the POC YJB</h1>'
 
-
 # Route for user signup
 @app.route('/signup', methods=['POST'])
 def signup():
@@ -24,7 +23,7 @@ def signup():
     password = data['password']
 
     # Create a MySQL connection
-    connection = mysql.connector.connect(**db_config)
+    connection = connect_db()
     cursor = connection.cursor()
 
     # Insert user data into the "User" table
