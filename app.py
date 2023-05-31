@@ -76,26 +76,24 @@ def pm_login():
     data = request.get_json()
     email = data['email']
     password = data['password']
-    cursor = mysql.connection.cursor()
-    query = "SELECT * FROM Users WHERE Email_ID=%s"
-    values = (Email_ID,)
-    cursor.execute(query, values)
-    users = cursor.fetchone()
+    cursor = connect_db().cursor()
 
-    if not users:
-        return jsonify({"role": "Invalid Email"})
+    # Retrieve user from the "User" table based on email
+    query = "SELECT * FROM User WHERE email = %s"
+    values = (email,)
+    cursor.execute(query, values)
+    user = cursor.fetchone()
+
+    if not user:
+        return jsonify({"error": "Invalid Email"})
+
+    stored_password = user[2]
+
+    if bcrypt.check_password_hash(stored_password, password):
+        return jsonify({"message": "Login successful..using hashing"})
     else:
-        flag = True
-        query = "SELECT * FROM Users WHERE Password=%s"
-        values = (Password,)
-        cursor.execute(query, values)
-        users = cursor.fetchone()
-        if not users:
-            return jsonify({"error": "Invalid Password"})
-        else:
-            flag2 = True
-        if flag and flag2:
-            return jsonify({"message": "Login successful....POC"})
+        return jsonify({"error": "Invalid Password"})
+
 
 ###########################################################
 # @app.route('/login', methods=['POST'])
