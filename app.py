@@ -74,8 +74,8 @@ def get_users():
 @app.route('/login', methods=['POST'])
 def pm_login():
     data = request.get_json()
-    Email_ID = data['email_id']
-    Password = data['password']
+    email = data['email']
+    password = data['password']
     cursor = mysql.connection.cursor()
     query = "SELECT * FROM Users WHERE Email_ID=%s"
     values = (Email_ID,)
@@ -95,7 +95,7 @@ def pm_login():
         else:
             flag2 = True
         if flag and flag2:
-            return jsonify({"message": "Login successful"})
+            return jsonify({"message": "Login successful....POC"})
 
 ###########################################################
 # @app.route('/login', methods=['POST'])
