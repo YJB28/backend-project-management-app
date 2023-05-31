@@ -12,7 +12,7 @@ cors = CORS(app,origins= "*")
 
 @app.route('/')
 def home():
-    return '<h1>Welcome Team :To the POC YJB...11</h1>'
+    return '<h1>Welcome Team :To the POC YJB...</h1>'
 
 # Route for user signup
 @app.route('/signup', methods=['POST'])
@@ -66,17 +66,15 @@ def get_users():
 
     return jsonify({"users": user_list})
 
-
-###########################################################
-#                           LOGIN                         #
-
-
 @app.route('/login', methods=['POST'])
-def pm_login():
+def login():
     data = request.get_json()
     email = data['email']
     password = data['password']
-    cursor = connect_db().cursor()
+
+    # Create a MySQL connection
+    connection = connect_db()
+    cursor = connection.cursor()
 
     # Retrieve user from the "User" table based on email
     query = "SELECT * FROM User WHERE email = %s"
@@ -84,15 +82,46 @@ def pm_login():
     cursor.execute(query, values)
     user = cursor.fetchone()
 
+    # Close the MySQL connection
+    cursor.close()
+    connection.close()
+
     if not user:
         return jsonify({"error": "Invalid Email"})
 
     stored_password = user[2]
 
-    if bcrypt.check_password_hash(stored_password, password):
-        return jsonify({"message": "Login successful..using hashing"})
+    if password == stored_password:
+        return jsonify({"message": "Login successful..."})
     else:
         return jsonify({"error": "Invalid Password"})
+
+###########################################################
+#                           LOGIN                         #
+
+
+# @app.route('/login', methods=['POST'])
+# def pm_login():
+#     data = request.get_json()
+#     email = data['email']
+#     password = data['password']
+#     cursor = connect_db().cursor()
+
+#     # Retrieve user from the "User" table based on email
+#     query = "SELECT * FROM User WHERE email = %s"
+#     values = (email,)
+#     cursor.execute(query, values)
+#     user = cursor.fetchone()
+
+#     if not user:
+#         return jsonify({"error": "Invalid Email"})
+
+#     stored_password = user[2]
+
+#     if bcrypt.check_password_hash(stored_password, password):
+#         return jsonify({"message": "Login successful..using hashing"})
+#     else:
+#         return jsonify({"error": "Invalid Password"})
 
 
 ###########################################################
