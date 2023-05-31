@@ -12,7 +12,7 @@ cors = CORS(app,origins= "*")
 
 @app.route('/')
 def home():
-    return '<h1>Welcome Team :To the POC YJB...</h1>'
+    return '<h1>Welcome Team :To the POC YJB...1</h1>'
 
 # Route for user signup
 @app.route('/signup', methods=['POST'])
