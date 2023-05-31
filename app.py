@@ -66,6 +66,8 @@ def get_users():
 
     return jsonify({"users": user_list})
 
+# Login
+
 @app.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
@@ -82,6 +84,9 @@ def login():
     cursor.execute(query, values)
     user = cursor.fetchone()
 
+    # Consume the result set
+    cursor.fetchall()
+
     # Close the MySQL connection
     cursor.close()
     connection.close()
@@ -92,9 +97,10 @@ def login():
     stored_password = user[2]
 
     if password == stored_password:
-        return jsonify({"message": "Login successful..."})
+        return jsonify({"message": "Login successful"})
     else:
         return jsonify({"error": "Invalid Password"})
+
 
 ###########################################################
 #                           LOGIN                         #
